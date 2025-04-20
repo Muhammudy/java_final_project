@@ -16,4 +16,11 @@ public class Card {
             return number;
         }
     }
+
+    public String getSuit() {
+        return suit;
+    }
+    public int getNumber() {
+        return number;
+    }
 }

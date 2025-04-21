@@ -1,49 +1,34 @@
 import java.util.Stack;
-import Java.util.Collections;
+import java.util.Collections;
 
 public class Deck {
-    Stack<Card> cards;
-
-    private int usedCards;
+    private Stack<Card> cards;
+    private int usedCardsNum;
 
     public Deck() {
         cards = new Stack<>();
-        this.usedCards = 0;
-        initilizeDeck(); // initilize the deck
-        shuffle(); // shuffle the cards
-    }
-
-    public void initilizeDeck() {
-        String[] suits = { "Hearts", "Diamonds", "Spades", "Clubs" };
-
-        for (String suit : suits) {
-            for (int number = 0; number <= 13; number++) {
-                cards.push(new Card(number, suit));
-
+        usedCardsNum = 0;
+        String[] suits = {"Hearts","Diamonds","Spades","Clubs"};
+        for (String s : suits) {
+            for (int n = 1; n <= 13; n++) {
+                cards.push(new Card(n, s));
             }
         }
-
+        shuffle();
     }
 
     public void shuffle() {
         Collections.shuffle(cards);
-        this.usedCards = 0;
+        usedCardsNum = 0;
     }
 
     public Card drawCard() {
-        if (!cards.isEmpty()) { // not empty
-            usedCards++;
-            return cards.pop();
-
-        } else {
-            System.out.println("No More Cards Left!");
-            return null;
-        }
-
+        if (cards.isEmpty()) return null;
+        usedCardsNum++;
+        return cards.pop();
     }
 
-    public int cardsRemaining() {
-        return cards.size();
+    public int getUsedCardsNum() {
+        return usedCardsNum;
     }
-
 }

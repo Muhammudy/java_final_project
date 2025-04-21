@@ -1,61 +1,54 @@
 import java.util.ArrayList;
 
 public class Hand {
-    private double betAmount;
-    ArrayList<Card> hand;
+    private ArrayList<Card> hand;
+    private double bet;
 
-    public Hand(double betAmount) {
-        this.betAmount = betAmount;
-        this.hand = new ArrayList<Card>();
-
+    public Hand(double bet) {
+        this.bet = bet;
+        hand = new ArrayList<>();
     }
 
-    public void addCard(Card card) { //added for testing, may or may not keep
-        this.hand.add(card);
+    public void addCard(Card card) {
+        hand.add(card);
     }
 
-    public int getValue(){// returns value of hand and accounts for aces
-        int total = 0;
-        int aces = 0;
-        for(Card card : hand){
-            if(card.getValue() == 11){
-                aces++;
-                total += card.getValue();
-            }
-            else{
-                total += card.getValue();
-            }
+    public ArrayList<Card> getCards() {
+        return hand;
+    }
+
+    public double getBet() {
+        return bet;
+    }
+
+    public int getValue() {
+        int total = 0, aces = 0;
+        for (Card c : hand) {
+            int v = c.getValue();
+            total += v;
+            if (v == 11) aces++;
         }
-
-        for(int i = 0; i < aces; ++i){
-            if(total > 21){
-                total -= 10;
-
-            }
-            else {break;}
+        while (total > 21 && aces > 0) {
+            total -= 10;
+            aces--;
         }
         return total;
     }
 
-    public boolean isBlackjack(){
-        return this.getValue() == 21;
+    public boolean isBlackjack() {
+        return hand.size() == 2 && getValue() == 21;
     }
 
-    public boolean isBusted(){
-        return this.getValue() > 21;
+    public boolean isBusted() {
+        return getValue() > 21;
     }
 
-    public boolean canSplit(){
-        if(hand.size() != 2){
-            return false;
-        }
+    public boolean canSplit() {
+        return hand.size() == 2 && hand.get(0).getValue() == hand.get(1).getValue();
+    }
 
-        else if(hand.get(0).getValue() == hand.get(1).getValue()){
-            return true;
-        }
-
-        else{
-            return false;
-        }
+    @Override
+    public String toString() {
+        return hand.toString();
     }
 }

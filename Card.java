@@ -8,19 +8,21 @@ public class Card {
     }
 
     public int getValue() {
-        if (number >= 10) {
-            return 10;
-        } else if (number == 1) {
-            return 11;
-        } else {
-            return number;
-        }
+        if (number == 1) return 11;         
+        if (number >= 10) return 10;          
+        return number;
+    }
+
+    public int getNumber() {
+        return number;
     }
 
     public String getSuit() {
         return suit;
     }
-    public int getNumber() {
-        return number;
+
+    @Override
+    public String toString() {
+        return number + " of " + suit;
     }
 }

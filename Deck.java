@@ -8,7 +8,7 @@ public class Deck {
     public Deck() {
         cards = new Stack<>();
         usedCardsNum = 0;
-        String[] suits = {"Hearts","Diamonds","Spades","Clubs"};
+        String[] suits = { "Hearts", "Diamonds", "Spades", "Clubs" };
         for (String s : suits) {
             for (int n = 1; n <= 13; n++) {
                 cards.push(new Card(n, s));
@@ -23,7 +23,9 @@ public class Deck {
     }
 
     public Card drawCard() {
-        if (cards.isEmpty()) return null;
+        if (cards.isEmpty()) {
+            return null;
+        }
         usedCardsNum++;
         return cards.pop();
     }

@@ -67,27 +67,45 @@ public class BlackjackGame implements Serializable {
     }
 
     public void stand() {
-        dealer.playTurn(deck);
-
         Hand p = playerHand(), d = dealerHand();
         int bet = p.bet();
 
-        if (!p.isBusted()) {
-            if (d.isBusted() || p.getValue() > d.getValue())
-                player.payout(2 * bet);
-            else if (p.getValue() == d.getValue())
-                player.payout(bet);
-        }
-        notifier.accept("END");
+        boolean playerBJ = p.isBlackjack();
+        boolean dealerBJ = d.isBlackjack();
 
-        if (bankroll() == 0) {
+        // Handle Blackjacks before dealer plays
+        if (playerBJ || dealerBJ) {
+            if (playerBJ && dealerBJ) {
+                // Push
+                player.payout(bet);
+            } else if (playerBJ) {
+                // Player wins with 3:2 payout
+                player.payout(bet + (int) (1.5 * bet));
+            }
+            notifier.accept("END");
+            checkBankroll();
+            return;
+        }
+
+        // No Blackjack — continue with dealer play
+        dealer.playTurn(deck);
+
+        if (!p.isBusted()) {
+            if (d.isBusted() || p.getValue() > d.getValue()) {
+                player.payout(2 * bet);
+            } else if (p.getValue() == d.getValue()) {
+                player.payout(bet);
+            }
+        }
+
+        notifier.accept("END");
+        checkBankroll();
+    }
+
+    private void checkBankroll() {
+        if (bankroll() <= 0) {
             javax.swing.SwingUtilities.invokeLater(() -> {
                 javax.swing.JOptionPane.showMessageDialog(null, "You're out of money, back to the Lobby!");
-            });
-            resetGame();
-        } else if (bankroll() < 0) {
-            javax.swing.SwingUtilities.invokeLater(() -> {
-                javax.swing.JOptionPane.showMessageDialog(null, "Negative bankroll detected, back to the Lobby!");
             });
             resetGame();
         }

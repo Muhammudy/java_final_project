@@ -9,7 +9,7 @@ import java.util.Map;
 public class Gui extends JFrame implements Serializable {
 
     private static final Color FELT = new Color(0, 102, 0);
-    private static final int W = 80, H = 115;
+    private static final int W = 150, H = 200;
 
     private final BlackjackGame game = new BlackjackGame();
     private final Map<String, ImageIcon> imgs = loadImages();
@@ -17,8 +17,10 @@ public class Gui extends JFrame implements Serializable {
     private final JPanel dealerPanel = new JPanel();
     private final JPanel playerPanel = new JPanel();
 
-    private final JPanel startPanel = new JPanel();
+    private final JPanel startPanel = new BackgroundPanel();
+
     private final JButton loadGameBtn = new JButton("Load Previous Game");
+    private final File saveFile = new File("game.ser");
     private final JButton newGameBtn = new JButton("Start a New Game");
     private final JLabel titleLabel = new JLabel();
 
@@ -27,11 +29,11 @@ public class Gui extends JFrame implements Serializable {
     private final JButton dealBtn = new JButton("Deal");
     private final JButton hitBtn = new JButton("Hit");
     private final JButton standBtn = new JButton("Stand");
-    private final JButton clearBtn = new JButton("Clear");
     private final JButton saveState = new JButton("Save");
+    private final JButton clearBtn = new JButton("Clear Bet");
+    private final ArrayList<JButton> chipButtons = new ArrayList<>();
 
-    // List to hold chip buttons for easy enable/disable
-    private final java.util.List<JButton> chipButtons = new ArrayList<>();
+    private Font customFont;
 
     public Gui() {
         super("Blackjack");
@@ -39,15 +41,34 @@ public class Gui extends JFrame implements Serializable {
         setSize(900, 600);
         setLayout(new BorderLayout());
 
+        try {
+            customFont = Font.createFont(
+                    Font.TRUETYPE_FONT,
+                    new File("font/BLACKJAR.TTF")).deriveFont(70f);
+
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            ge.registerFont(customFont);
+        } catch (IOException | FontFormatException e) {
+            e.printStackTrace();
+            customFont = new Font("Serif", Font.PLAIN, 18); // fallback font
+        }
+
         // Configure panels
         dealerPanel.setBorder(BorderFactory.createTitledBorder("Dealer"));
         playerPanel.setBorder(BorderFactory.createTitledBorder("You"));
         dealerPanel.setBackground(FELT);
         playerPanel.setBackground(FELT);
 
+        if (!saveFile.exists()) {
+            loadGameBtn.setEnabled(false);
+        } else {
+            loadGameBtn.setEnabled(true);
+        }
+
         // Start screen layout
-        titleLabel.setText("Welcome To Blackjack");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setText("Welcome To Blackjack!");
+        titleLabel.setFont(customFont);
+        titleLabel.setForeground(Color.WHITE);
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         startPanel.setLayout(new BorderLayout());
@@ -150,32 +171,6 @@ public class Gui extends JFrame implements Serializable {
         return p;
     }
 
-    private void addChipButton(JPanel parent, String fileName, int value) {
-        Image img = new ImageIcon("cards/" + fileName).getImage()
-                .getScaledInstance(48, 48, Image.SCALE_SMOOTH);
-        JButton btn = new JButton(new ImageIcon(img));
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        btn.setFocusPainted(false);
-        btn.setToolTipText("Add $" + value);
-        btn.addActionListener(e -> incrementBet(value));
-        parent.add(btn);
-        chipButtons.add(btn);
-    }
-
-    private void incrementBet(int dollars) {
-        betFld.setText(String.valueOf(parseBet() + dollars));
-    }
-
-    private int parseBet() {
-        try { return Integer.parseInt(betFld.getText().trim()); }
-        catch (NumberFormatException ex) { return 0; }
-    }
-
-    private void toggleChipButtons(boolean enabled) {
-        chipButtons.forEach(b -> b.setEnabled(enabled));
-    }
-
     private void refresh(String evt) {
         dealerPanel.removeAll();
         playerPanel.removeAll();
@@ -183,7 +178,7 @@ public class Gui extends JFrame implements Serializable {
         drawHand(game.dealerHand(), dealerPanel, !evt.equals("END"));
         drawHand(game.playerHand(), playerPanel, false);
 
-        balanceLbl.setText("Bankroll: $" + game.bankroll());
+        balanceLbl.setText("Balance: $" + String.format("%.2f", game.balance()));
 
         dealerPanel.revalidate();
         dealerPanel.repaint();
@@ -195,28 +190,40 @@ public class Gui extends JFrame implements Serializable {
             standBtn.setEnabled(false);
             dealBtn.setEnabled(true);
             saveState.setEnabled(true);
-            JOptionPane.showMessageDialog(this, game.outcomeString());
-            betFld.setText("0");
             toggleChipButtons(true);
+            JOptionPane.showMessageDialog(this, game.outcomeString());
         }
     }
 
     private void drawHand(Hand hand, JPanel p, boolean hideFirst) {
-        if (hand == null || hand.getCards() == null) {
-            return;
-        }
-        p.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 8));
+        if (hand == null || hand.getCards() == null) return;
+
+        p.removeAll();
+        p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
+
+        /* ---------- row of card images ---------- */
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8));  // ← centred
         int i = 0;
         for (Card c : hand.getCards()) {
-            if (c == null) {
-                System.out.println("Null card found in hand!");
-                continue;
-            }
-            ImageIcon ico = (i == 0 && hideFirst) ? imgs.get("BACK") : imgs.get(key(c));
-            p.add(new JLabel(ico));
+            ImageIcon ico =
+                (i == 0 && hideFirst) ? imgs.get("BACK") : imgs.get(key(c));
+            row.add(new JLabel(ico));
             i++;
         }
+        row.setOpaque(false);
+        row.setAlignmentX(Component.CENTER_ALIGNMENT);                     // ← centre in column
+        p.add(row);
+
+        /* ---------- total shown underneath ---------- */
+        if (!hideFirst) {
+            JLabel totalLbl = new JLabel(String.valueOf(hand.getValue()));
+            totalLbl.setFont(totalLbl.getFont().deriveFont(Font.BOLD, 18f));
+            totalLbl.setForeground(Color.WHITE);
+            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT);            // ← centre in column
+            p.add(totalLbl);
+        }
     }
+
 
     private String key(Card c) {
         int n = c.getNumber();
@@ -247,7 +254,35 @@ public class Gui extends JFrame implements Serializable {
         return m;
     }
 
+    private void addChipButton(JPanel parent, String fileName, int value) {
+        Image img = new ImageIcon("cards/" + fileName).getImage()
+                .getScaledInstance(48, 48, Image.SCALE_SMOOTH);
+        JButton btn = new JButton(new ImageIcon(img));
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setToolTipText("Add $" + value);
+        btn.addActionListener(e -> incrementBet(value));
+        parent.add(btn);
+        chipButtons.add(btn);
+    }
+
+    private void incrementBet(int dollars) {
+        betFld.setText(String.valueOf(parseBet() + dollars));
+    }
+
+    private int parseBet() {
+        try { return Integer.parseInt(betFld.getText().trim()); }
+        catch (NumberFormatException ex) { return 0; }
+    }
+
+    private void toggleChipButtons(boolean enabled) {
+        chipButtons.forEach(b -> b.setEnabled(enabled));
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(Gui::new);
     }
 }
+
+

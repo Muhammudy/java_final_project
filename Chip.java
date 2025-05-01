@@ -7,3 +7,5 @@ public enum Chip {
         return chips.entrySet().stream().mapToInt(e -> e.getKey().value * e.getValue()).sum();
     }
 }
+//This enum defines every chip color in the game and stores its dollar value, so elsewhere in the code 
+// we can quickly ask any chip for its worth or total up a whole pile of chips into a single cash amount

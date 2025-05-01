@@ -73,6 +73,12 @@ public class BlackjackGame implements Serializable {
             });
             resetGame();
         }
+        else if (bankroll() < 0) {
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                javax.swing.JOptionPane.showMessageDialog(null, "Negative bankroll detected!");
+            });
+            resetGame();
+        }
     }
 
     public void resetGame() {

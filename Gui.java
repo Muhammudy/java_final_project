@@ -14,8 +14,8 @@ public class Gui extends JFrame implements Serializable {
     private final BlackjackGame game = new BlackjackGame();
     private final Map<String, ImageIcon> imgs = loadImages();
 
-    private final JPanel dealerPanel = new JPanel();
-    private final JPanel playerPanel = new JPanel();
+    private final JPanel dealerPanel = new BackgroundPanel();
+    private final JPanel playerPanel = new BackgroundPanel();
 
     private final JPanel startPanel = new BackgroundPanel();
 
@@ -31,7 +31,9 @@ public class Gui extends JFrame implements Serializable {
     private final JButton standBtn = new JButton("Stand");
     private final JButton saveState = new JButton("Save");
     private final JButton clearBtn = new JButton("Clear Bet");
+    private final JButton shuffleBtn = new JButton("Shuffle Deck");
     private final ArrayList<JButton> chipButtons = new ArrayList<>();
+    private String message;
 
     private Font customFont;
 
@@ -138,6 +140,7 @@ public class Gui extends JFrame implements Serializable {
         p.add(standBtn);
         p.add(balanceLbl);
         p.add(saveState);
+        p.add(shuffleBtn);
 
         hitBtn.setEnabled(false);
         standBtn.setEnabled(false);
@@ -167,8 +170,34 @@ public class Gui extends JFrame implements Serializable {
 
         hitBtn.addActionListener(e -> game.hit());
         standBtn.addActionListener(e -> game.stand());
+        shuffleBtn.addActionListener(e -> {
+            message = game.shuffle();
+            System.out.println(message);
+
+            // Use equals() to compare strings
+            if (message.equals("Deck shuffled successfully")) {
+                JOptionPane.showMessageDialog(this, message);
+            }
+        });
 
         return p;
+    }
+
+    public void resetGame() {
+        getContentPane().removeAll(); // Clear current UI
+
+        game.setBalance(500);
+
+        game.setPlayerHand(new Hand(0));
+        game.setDealerHand(new Hand(0));
+
+        // 4. Reset deck
+        game.setDeck(new Deck());
+
+        add(startPanel, BorderLayout.CENTER); // Show start screen
+
+        revalidate();
+        repaint();
     }
 
     private void refresh(String evt) {
@@ -192,38 +221,46 @@ public class Gui extends JFrame implements Serializable {
             saveState.setEnabled(true);
             toggleChipButtons(true);
             JOptionPane.showMessageDialog(this, game.outcomeString());
+        } else if (evt.equals("RESET")) {
+            hitBtn.setEnabled(false);
+            standBtn.setEnabled(false);
+            dealBtn.setEnabled(true);
+            saveState.setEnabled(true);
+            toggleChipButtons(true);
+            resetGame();
+            return;
+
         }
     }
 
     private void drawHand(Hand hand, JPanel p, boolean hideFirst) {
-        if (hand == null || hand.getCards() == null) return;
+        if (hand == null || hand.getCards() == null)
+            return;
 
         p.removeAll();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 
         /* ---------- row of card images ---------- */
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8));  // ← centred
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8)); // ← centred
         int i = 0;
         for (Card c : hand.getCards()) {
-            ImageIcon ico =
-                (i == 0 && hideFirst) ? imgs.get("BACK") : imgs.get(key(c));
+            ImageIcon ico = (i == 0 && hideFirst) ? imgs.get("BACK") : imgs.get(key(c));
             row.add(new JLabel(ico));
             i++;
         }
         row.setOpaque(false);
-        row.setAlignmentX(Component.CENTER_ALIGNMENT);                     // ← centre in column
+        row.setAlignmentX(Component.CENTER_ALIGNMENT); // ← centre in column
         p.add(row);
 
         /* ---------- total shown underneath ---------- */
         if (!hideFirst) {
             JLabel totalLbl = new JLabel(String.valueOf(hand.getValue()));
-            totalLbl.setFont(totalLbl.getFont().deriveFont(Font.BOLD, 18f));
-            totalLbl.setForeground(Color.WHITE);
-            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT);            // ← centre in column
+            totalLbl.setFont(customFont);
+            totalLbl.setForeground(Color.BLACK);
+            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT); // ← centre in column
             p.add(totalLbl);
         }
     }
-
 
     private String key(Card c) {
         int n = c.getNumber();
@@ -272,8 +309,11 @@ public class Gui extends JFrame implements Serializable {
     }
 
     private int parseBet() {
-        try { return Integer.parseInt(betFld.getText().trim()); }
-        catch (NumberFormatException ex) { return 0; }
+        try {
+            return Integer.parseInt(betFld.getText().trim());
+        } catch (NumberFormatException ex) {
+            return 0;
+        }
     }
 
     private void toggleChipButtons(boolean enabled) {
@@ -284,5 +324,3 @@ public class Gui extends JFrame implements Serializable {
         SwingUtilities.invokeLater(Gui::new);
     }
 }
-
-

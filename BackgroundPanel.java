@@ -9,7 +9,7 @@ public class BackgroundPanel extends JPanel {
 
     public BackgroundPanel() {
         try {
-            // Load the background image
+
             backgroundImage = ImageIO.read(new File("background/9999520.jpg"));
         } catch (IOException e) {
             e.printStackTrace();

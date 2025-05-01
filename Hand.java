@@ -3,7 +3,7 @@ import java.util.ArrayList;
 
 public class Hand implements Serializable {
     private final ArrayList<Card> cards = new ArrayList<>();
-    private final int wager; // cash equivalent of the chip pile
+    private final int wager;
 
     public Hand(int wager) {
         this.wager = wager;

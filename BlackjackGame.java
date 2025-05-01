@@ -1,54 +1,37 @@
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class BlackjackGame {
 
-    private final Deck deck = new Deck();
-    private final Player player = new Player(500);
+    private final Deck   deck   = new Deck();
+    private final Player player = new Player(500);   // $500 buy-in
     private final Dealer dealer = new Dealer();
 
-    private Consumer<String> notifier = s -> {
-    };
+    private Consumer<String> notifier = s -> {};
 
-    public void setNotifier(Consumer<String> n) {
-        notifier = n;
-    }
+    public void setNotifier(Consumer<String> n) { notifier = n; }
 
-    public Hand playerHand() {
-        if (player.getHands().isEmpty()) {
-            return null;
-        } else {
-            return player.getHands().get(0);
-        }
+    public Hand playerHand() { return player.getHands().isEmpty() ? null
+                                         : player.getHands().get(0); }
+    public Hand dealerHand() { return dealer.getHands().isEmpty() ? null
+                                         : dealer.getHands().get(0); }
 
-    }
+    public int bankroll() { return player.bankroll(); }
 
-    public Hand dealerHand() {
-        if (dealer.getHands().isEmpty()) {
-            return null;
-        } else {
-            return dealer.getHands().get(0);
-        }
+    /* ---------- round flow ---------- */
 
-    }
+    public boolean startRound(int cashBet) {
+        if (cashBet <= 0 || cashBet > bankroll()) return false;
 
-    public double balance() {
-        return player.getBalance();
-    }
+        // bet = pile of $1 chips for now
+        if (!player.takeBet(Map.of(Chip.ONE, cashBet))) return false;
 
-    public boolean startRound(double bet) {
-        if (bet <= 0 || bet > player.getBalance()) {
-            return false;
-        }
         player.getHands().clear();
         dealer.getHands().clear();
-        if (deck.getUsedCardsNum() > 35) {
-            deck.shuffle();
-        }
+        if (deck.getUsedCardsNum() > 35) deck.shuffle();
 
-        Hand p = new Hand(bet); // player
-        Hand d = new Hand(0); // dealer
-
-        player.adjustBalance(-bet);
+        Hand p = new Hand(cashBet);
+        Hand d = new Hand(0);
         player.getHands().add(p);
         dealer.getHands().add(d);
 
@@ -63,53 +46,47 @@ public class BlackjackGame {
     public void hit() {
         player.hit(playerHand(), deck);
         notifier.accept("HIT");
-        if (playerHand().isBusted()) {
-            stand();
-        }
+        if (playerHand().isBusted()) stand();   // auto-stand on bust
     }
 
     public void stand() {
-
         dealer.playTurn(deck);
 
-        Hand playerHand = playerHand();
-        Hand dealerHand = dealerHand();
+        Hand p = playerHand(), d = dealerHand();
+        int bet = p.bet();
 
-        double bet = playerHand.getBet();
-
-        if (playerHand.isBusted()) {
-            // already subtracted
-
-        } else if (dealerHand.isBusted()) {
-            player.adjustBalance(2 * bet);
-        } else if (playerHand.getValue() > dealerHand.getValue()) {
-            player.adjustBalance(2 * bet);
-        } else if (playerHand.getValue() == dealerHand.getValue()) {
-            player.adjustBalance(bet);
+        if (!p.isBusted()) {
+            if (d.isBusted() || p.getValue() > d.getValue())
+                player.payout(2 * bet);            // win
+            else if (p.getValue() == d.getValue())
+                player.payout(bet);                // push
         }
-
         notifier.accept("END");
+
+        // Check if bankroll is zero and reset game if so
+        if (bankroll() == 0) {
+            javax.swing.SwingUtilities.invokeLater(() -> {
+                javax.swing.JOptionPane.showMessageDialog(null, "your POOR!");
+            });
+            resetGame();
+        }
     }
+
+    public void resetGame() {
+        player.resetBankroll(500);     // fresh buy-in
+        player.getHands().clear();
+        dealer.getHands().clear();
+        deck.shuffle();
+    }
+
 
     public String outcomeString() {
-        Hand playerHand = playerHand();
-        Hand dealerHand = dealerHand();
-        double bet = playerHand.getBet();
-
-        if (playerHand.isBusted()) {
-            return "You bust! -$" + bet;
-        }
-        if (dealerHand.isBusted()) {
-            return "Dealer busts! +$" + (2 * bet);
-        }
-        if (playerHand.getValue() > dealerHand.getValue()) {
-            return "You win! +$" + (2 * bet);
-        }
-        if (playerHand.getValue() < dealerHand.getValue()) {
-            return "Dealer wins! -$" + bet;
-        }
-
-        return "Push. Bet returned.";
+        Hand p = playerHand(), d = dealerHand();
+        int bet = p.bet();
+        if (p.isBusted())                return "You bust  -$" + bet;
+        if (d.isBusted())                return "Dealer busts! +$" + bet;
+        if (p.getValue() > d.getValue()) return "You win   +$" + bet;
+        if (p.getValue() < d.getValue()) return "Dealer wins -$" + bet;
+        return "Push – bet returned";
     }
-
 }

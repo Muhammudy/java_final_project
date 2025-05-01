@@ -1,12 +1,14 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class Gui extends JFrame {
 
     private static final Color FELT = new Color(0, 102, 0);
-    private static final int   W = 80, H = 115;       
+    private static final int   W = 80, H = 115;
 
     private final BlackjackGame game = new BlackjackGame();
 
@@ -16,10 +18,14 @@ public class Gui extends JFrame {
     private final JPanel playerPanel = new JPanel();
 
     private final JLabel  balanceLbl = new JLabel();
-    private final JTextField betFld   = new JTextField("50", 4);
+    private final JTextField betFld   = new JTextField("0", 4);
     private final JButton dealBtn  = new JButton("Deal");
     private final JButton hitBtn   = new JButton("Hit");
     private final JButton standBtn = new JButton("Stand");
+    private final JButton clearBtn = new JButton("Clear");
+
+    // List to hold chip buttons for easy enable/disable
+    private final java.util.List<JButton> chipButtons = new ArrayList<>();
 
     public Gui() {
         super("Blackjack");
@@ -46,6 +52,15 @@ public class Gui extends JFrame {
 
         p.add(new JLabel("Bet $"));
         p.add(betFld);
+
+        // Add chip buttons
+        addChipButton(p, "ChipYellow1.png", 1);
+        addChipButton(p, "ChipRed5.png", 5);
+        addChipButton(p, "ChipBlue10.png", 10);
+        addChipButton(p, "ChipGreen25.png", 25);
+        addChipButton(p, "BlackChip100.png", 100);
+
+        p.add(clearBtn);
         p.add(dealBtn);
         p.add(hitBtn);
         p.add(standBtn);
@@ -54,16 +69,51 @@ public class Gui extends JFrame {
         hitBtn.setEnabled(false);
         standBtn.setEnabled(false);
 
-        dealBtn.addActionListener(e -> {
-            if (game.startRound(Double.parseDouble(betFld.getText()))) {
-                hitBtn.setEnabled(true);
-                standBtn.setEnabled(true);
-                dealBtn.setEnabled(false);
-            }
-        });
-        hitBtn  .addActionListener(e -> game.hit());
+        clearBtn.addActionListener(e -> betFld.setText("0"));
+
+        dealBtn.addActionListener(this::dealAction);
+        hitBtn.addActionListener(e -> game.hit());
         standBtn.addActionListener(e -> game.stand());
+
         return p;
+    }
+
+    private void addChipButton(JPanel parent, String fileName, int value) {
+        Image img = new ImageIcon("cards/" + fileName).getImage()
+                .getScaledInstance(48, 48, Image.SCALE_SMOOTH);
+        JButton btn = new JButton(new ImageIcon(img));
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setFocusPainted(false);
+        btn.setToolTipText("Add $" + value);
+        btn.addActionListener(e -> incrementBet(value));
+        parent.add(btn);
+        chipButtons.add(btn);
+    }
+
+    private void incrementBet(int dollars) {
+        betFld.setText(String.valueOf(parseBet() + dollars));
+    }
+
+    private int parseBet() {
+        try { return Integer.parseInt(betFld.getText().trim()); }
+        catch (NumberFormatException ex) { return 0; }
+    }
+
+    private void dealAction(ActionEvent e) {
+        int wager = parseBet();
+        if (game.startRound(wager)) {
+            toggleChipButtons(false);
+            dealBtn.setEnabled(false);
+            hitBtn.setEnabled(true);
+            standBtn.setEnabled(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Invalid bet or insufficient bankroll.");
+        }
+    }
+
+    private void toggleChipButtons(boolean enabled) {
+        chipButtons.forEach(b -> b.setEnabled(enabled));
     }
 
     private void refresh(String evt) {
@@ -73,7 +123,7 @@ public class Gui extends JFrame {
         drawHand(game.dealerHand(), dealerPanel, !evt.equals("END"));
         drawHand(game.playerHand(), playerPanel, false);
 
-        balanceLbl.setText("Balance: $" + String.format("%.2f", game.balance()));
+        balanceLbl.setText("Bankroll: $" + game.bankroll());
 
         dealerPanel.revalidate(); dealerPanel.repaint();
         playerPanel.revalidate(); playerPanel.repaint();
@@ -82,7 +132,9 @@ public class Gui extends JFrame {
             hitBtn.setEnabled(false);
             standBtn.setEnabled(false);
             dealBtn.setEnabled(true);
+            toggleChipButtons(true);
             JOptionPane.showMessageDialog(this, game.outcomeString());
+            betFld.setText("0");
         }
     }
 
@@ -108,7 +160,7 @@ public class Gui extends JFrame {
 
     private ImageIcon icon(String path) {
         Image img = new ImageIcon(path).getImage()
-                       .getScaledInstance(W, H, Image.SCALE_SMOOTH);
+                .getScaledInstance(W, H, Image.SCALE_SMOOTH);
         return new ImageIcon(img);
     }
 

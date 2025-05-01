@@ -1,29 +1,28 @@
 import java.util.ArrayList;
 
 public class Hand {
-    private ArrayList<Card> hand;
-    private double bet;
+    private final java.util.ArrayList<Card> cards = new java.util.ArrayList<>();
+    private final int wager; // cash equivalent of the chip pile
 
-    public Hand(double bet) {
-        this.bet = bet;
-        hand = new ArrayList<>();
+    public Hand(int wager) { 
+        this.wager = wager; 
+    }
+
+    public int bet() { 
+        return wager; 
     }
 
     public void addCard(Card card) {
-        hand.add(card);
+        cards.add(card);
     }
 
-    public ArrayList<Card> getCards() {
-        return hand;
-    }
-
-    public double getBet() {
-        return bet;
+    public java.util.ArrayList<Card> getCards() {
+        return cards;
     }
 
     public int getValue() {
         int total = 0, aces = 0;
-        for (Card c : hand) {
+        for (Card c : cards) {
             int v = c.getValue();
             total += v;
             if (v == 11) aces++;
@@ -36,7 +35,7 @@ public class Hand {
     }
 
     public boolean isBlackjack() {
-        return hand.size() == 2 && getValue() == 21;
+        return cards.size() == 2 && getValue() == 21;
     }
 
     public boolean isBusted() {
@@ -44,11 +43,11 @@ public class Hand {
     }
 
     public boolean canSplit() {
-        return hand.size() == 2 && hand.get(0).getValue() == hand.get(1).getValue();
+        return cards.size() == 2 && cards.get(0).getValue() == cards.get(1).getValue();
     }
 
     @Override
     public String toString() {
-        return hand.toString();
+        return cards.toString();
     }
 }

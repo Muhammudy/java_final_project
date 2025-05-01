@@ -6,7 +6,7 @@ public class Dealer extends Player {
     public void playTurn(Deck deck) {
         Hand hand = getHands().get(0);
         while (hand.getValue() < 17) {
-            hit(hand, deck);
+            hand.addCard(deck.drawCard());
         }
     }
 }

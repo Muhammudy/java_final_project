@@ -1,4 +1,6 @@
-public class Card {
+import java.io.Serializable;
+
+public class Card implements Serializable {
 
     private final int number;   // 1-13  (Ace..King)
     private final String suit;  // "Hearts", "Diamonds", ...
@@ -32,11 +34,12 @@ public class Card {
     }
 
     public int getValue() {
-        return switch (number) {
-            case 1  -> 11;               // Ace (will adjust in Hand)
-            case 11, 12, 13 -> 10;       // J, Q, K
-            default -> number;           // 2-10
-        };
+        if (number == 1) {
+            return 11;
+        } else if (number >= 10) {
+            return 10;
+        } else {
+            return number;
+        }
     }
-
 }

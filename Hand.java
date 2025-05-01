@@ -1,22 +1,27 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Hand {
-    private final java.util.ArrayList<Card> cards = new java.util.ArrayList<>();
+public class Hand implements Serializable {
+    private final ArrayList<Card> cards = new ArrayList<>();
     private final int wager; // cash equivalent of the chip pile
 
-    public Hand(int wager) { 
-        this.wager = wager; 
+    public Hand(int wager) {
+        this.wager = wager;
     }
 
-    public int bet() { 
-        return wager; 
+    public int bet() {
+        return wager;
     }
 
     public void addCard(Card card) {
-        cards.add(card);
+        if (card != null) {
+            cards.add(card);
+        } else {
+            System.out.println("Attempted to add a null card to the hand");
+        }
     }
 
-    public java.util.ArrayList<Card> getCards() {
+    public ArrayList<Card> getCards() {
         return cards;
     }
 
@@ -25,7 +30,8 @@ public class Hand {
         for (Card c : cards) {
             int v = c.getValue();
             total += v;
-            if (v == 11) aces++;
+            if (v == 11)
+                aces++;
         }
         while (total > 21 && aces > 0) {
             total -= 10;

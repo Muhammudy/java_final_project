@@ -1,28 +1,34 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Gui extends JFrame {
+public class Gui extends JFrame implements Serializable {
 
     private static final Color FELT = new Color(0, 102, 0);
-    private static final int   W = 80, H = 115;
+    private static final int W = 80, H = 115;
 
     private final BlackjackGame game = new BlackjackGame();
-
     private final Map<String, ImageIcon> imgs = loadImages();
 
     private final JPanel dealerPanel = new JPanel();
     private final JPanel playerPanel = new JPanel();
 
-    private final JLabel  balanceLbl = new JLabel();
-    private final JTextField betFld   = new JTextField("0", 4);
-    private final JButton dealBtn  = new JButton("Deal");
-    private final JButton hitBtn   = new JButton("Hit");
+    private final JPanel startPanel = new JPanel();
+    private final JButton loadGameBtn = new JButton("Load Previous Game");
+    private final JButton newGameBtn = new JButton("Start a New Game");
+    private final JLabel titleLabel = new JLabel();
+
+    private final JLabel balanceLbl = new JLabel();
+    private final JTextField betFld = new JTextField("50", 4);
+    private final JButton dealBtn = new JButton("Deal");
+    private final JButton hitBtn = new JButton("Hit");
     private final JButton standBtn = new JButton("Stand");
     private final JButton clearBtn = new JButton("Clear");
+    private final JButton saveState = new JButton("Save");
 
     // List to hold chip buttons for easy enable/disable
     private final java.util.List<JButton> chipButtons = new ArrayList<>();
@@ -33,23 +39,68 @@ public class Gui extends JFrame {
         setSize(900, 600);
         setLayout(new BorderLayout());
 
+        // Configure panels
         dealerPanel.setBorder(BorderFactory.createTitledBorder("Dealer"));
         playerPanel.setBorder(BorderFactory.createTitledBorder("You"));
         dealerPanel.setBackground(FELT);
         playerPanel.setBackground(FELT);
 
+        // Start screen layout
+        titleLabel.setText("Welcome To Blackjack");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 24));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
+        startPanel.setLayout(new BorderLayout());
+        startPanel.add(titleLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(newGameBtn);
+        buttonPanel.add(loadGameBtn);
+        startPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Add start screen first
+        add(startPanel, BorderLayout.CENTER);
+
+        // Action listeners for start screen
+        newGameBtn.addActionListener(e -> startNewGame());
+        loadGameBtn.addActionListener(e -> loadGame());
+
+        setVisible(true);
+    }
+
+    private void startNewGame() {
+        remove(startPanel);
         add(dealerPanel, BorderLayout.NORTH);
         add(playerPanel, BorderLayout.CENTER);
         add(buildControls(), BorderLayout.SOUTH);
 
-        game.setNotifier(evt -> refresh(evt));  
+        game.setNotifier(evt -> refresh(evt));
         refresh("INIT");
-        setVisible(true);
+    }
+
+    private void loadGame() {
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("game.ser"))) {
+            BlackjackGame loadedGame = (BlackjackGame) in.readObject();
+            this.game.setBalance(loadedGame.balance());
+            this.game.setPlayerHand(loadedGame.playerHand());
+            this.game.setDealerHand(loadedGame.dealerHand());
+            this.game.setDeck(loadedGame.deck());
+            remove(startPanel);
+            add(dealerPanel, BorderLayout.NORTH);
+            add(playerPanel, BorderLayout.CENTER);
+            add(buildControls(), BorderLayout.SOUTH);
+            game.setNotifier(evt -> refresh(evt));
+
+            refresh("INIT");
+            JOptionPane.showMessageDialog(this, "Game loaded successfully!");
+        } catch (IOException | ClassNotFoundException ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Failed to load game.");
+        }
     }
 
     private JPanel buildControls() {
         JPanel p = new JPanel(new FlowLayout(FlowLayout.LEFT));
-
         p.add(new JLabel("Bet $"));
         p.add(betFld);
 
@@ -65,13 +116,34 @@ public class Gui extends JFrame {
         p.add(hitBtn);
         p.add(standBtn);
         p.add(balanceLbl);
+        p.add(saveState);
 
         hitBtn.setEnabled(false);
         standBtn.setEnabled(false);
+        saveState.setEnabled(false);
 
         clearBtn.addActionListener(e -> betFld.setText("0"));
 
-        dealBtn.addActionListener(this::dealAction);
+        dealBtn.addActionListener(e -> {
+            if (game.startRound(Double.parseDouble(betFld.getText()))) {
+                toggleChipButtons(false);
+                dealBtn.setEnabled(false);
+                hitBtn.setEnabled(true);
+                standBtn.setEnabled(true);
+                saveState.setEnabled(false);
+            }
+        });
+
+        saveState.addActionListener(e -> {
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("game.ser"))) {
+                out.writeObject(game);
+                JOptionPane.showMessageDialog(this, "Game saved successfully!");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Failed to save game");
+            }
+        });
+
         hitBtn.addActionListener(e -> game.hit());
         standBtn.addActionListener(e -> game.stand());
 
@@ -100,18 +172,6 @@ public class Gui extends JFrame {
         catch (NumberFormatException ex) { return 0; }
     }
 
-    private void dealAction(ActionEvent e) {
-        int wager = parseBet();
-        if (game.startRound(wager)) {
-            toggleChipButtons(false);
-            dealBtn.setEnabled(false);
-            hitBtn.setEnabled(true);
-            standBtn.setEnabled(true);
-        } else {
-            JOptionPane.showMessageDialog(this, "Invalid bet or insufficient bankroll.");
-        }
-    }
-
     private void toggleChipButtons(boolean enabled) {
         chipButtons.forEach(b -> b.setEnabled(enabled));
     }
@@ -125,24 +185,33 @@ public class Gui extends JFrame {
 
         balanceLbl.setText("Bankroll: $" + game.bankroll());
 
-        dealerPanel.revalidate(); dealerPanel.repaint();
-        playerPanel.revalidate(); playerPanel.repaint();
+        dealerPanel.revalidate();
+        dealerPanel.repaint();
+        playerPanel.revalidate();
+        playerPanel.repaint();
 
         if (evt.equals("END")) {
             hitBtn.setEnabled(false);
             standBtn.setEnabled(false);
             dealBtn.setEnabled(true);
-            toggleChipButtons(true);
+            saveState.setEnabled(true);
             JOptionPane.showMessageDialog(this, game.outcomeString());
             betFld.setText("0");
+            toggleChipButtons(true);
         }
     }
 
-    private void drawHand(Hand h, JPanel p, boolean hideFirst) {
-        if (h == null) return;
+    private void drawHand(Hand hand, JPanel p, boolean hideFirst) {
+        if (hand == null || hand.getCards() == null) {
+            return;
+        }
         p.setLayout(new FlowLayout(FlowLayout.LEFT, 8, 8));
         int i = 0;
-        for (Card c : h.getCards()) {
+        for (Card c : hand.getCards()) {
+            if (c == null) {
+                System.out.println("Null card found in hand!");
+                continue;
+            }
             ImageIcon ico = (i == 0 && hideFirst) ? imgs.get("BACK") : imgs.get(key(c));
             p.add(new JLabel(ico));
             i++;
@@ -152,23 +221,25 @@ public class Gui extends JFrame {
     private String key(Card c) {
         int n = c.getNumber();
         String r = switch (n) {
-            case 1 -> "A"; case 11 -> "J"; case 12 -> "Q"; case 13 -> "K";
+            case 1 -> "A";
+            case 11 -> "J";
+            case 12 -> "Q";
+            case 13 -> "K";
             default -> String.valueOf(n);
         };
         return r + "-" + c.getSuit().charAt(0);
     }
 
     private ImageIcon icon(String path) {
-        Image img = new ImageIcon(path).getImage()
-                .getScaledInstance(W, H, Image.SCALE_SMOOTH);
+        Image img = new ImageIcon(path).getImage().getScaledInstance(W, H, Image.SCALE_SMOOTH);
         return new ImageIcon(img);
     }
 
     private Map<String, ImageIcon> loadImages() {
         Map<String, ImageIcon> m = new HashMap<>();
         String base = "cards/";
-        String[] s = {"C", "D", "H", "S"};
-        String[] r = {"A","2","3","4","5","6","7","8","9","10","J","Q","K"};
+        String[] s = { "C", "D", "H", "S" };
+        String[] r = { "A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K" };
         for (String su : s)
             for (String ra : r)
                 m.put(ra + "-" + su, icon(base + ra + "-" + su + ".png"));

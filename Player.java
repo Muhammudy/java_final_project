@@ -11,7 +11,7 @@ public class Player implements Serializable {
         addChips(buyInDollars);
     }
 
-    // For compatibility with GUI code that uses balance as double
+
     public double getBalance() {
         return bankroll();
     }
@@ -22,11 +22,11 @@ public class Player implements Serializable {
     }
 
     public void adjustBalance(double delta) {
-        // Not used with chips, but provided for compatibility
+
         addChips((int) delta);
     }
 
-    /* ---------- chip helpers ---------- */
+
 
     public int bankroll() {
         return Chip.total(chips);
@@ -40,7 +40,7 @@ public class Player implements Serializable {
         }
     }
 
-    /** Remove the chips listed in wager; return false if player is short. */
+
     public boolean takeBet(Map<Chip, Integer> wager) {
         for (var e : wager.entrySet())
             if (chips.getOrDefault(e.getKey(), 0) < e.getValue()) return false;
@@ -48,12 +48,12 @@ public class Player implements Serializable {
         return true;
     }
 
-    /** Positive dollars → winnings (or returned bet). */
+
     public void payout(int dollars) {
         addChips(dollars);
     }
 
-    /* ---------- helpers the game/GUI already use ---------- */
+
 
     public void hit(Hand h, Deck d) {
         h.addCard(d.drawCard());

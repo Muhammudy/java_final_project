@@ -67,7 +67,7 @@ public class Gui extends JFrame implements Serializable {
             loadGameBtn.setEnabled(true);
         }
 
-        // Start screen layout
+
         titleLabel.setText("Welcome To Blackjack!");
         titleLabel.setFont(customFont);
         titleLabel.setForeground(Color.WHITE);
@@ -81,10 +81,10 @@ public class Gui extends JFrame implements Serializable {
         buttonPanel.add(loadGameBtn);
         startPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Add start screen first
+
         add(startPanel, BorderLayout.CENTER);
 
-        // Action listeners for start screen
+
         newGameBtn.addActionListener(e -> startNewGame());
         loadGameBtn.addActionListener(e -> loadGame());
 
@@ -174,7 +174,7 @@ public class Gui extends JFrame implements Serializable {
             message = game.shuffle();
             System.out.println(message);
 
-            // Use equals() to compare strings
+
             if (message.equals("Deck shuffled successfully")) {
                 JOptionPane.showMessageDialog(this, message);
             }
@@ -184,7 +184,7 @@ public class Gui extends JFrame implements Serializable {
     }
 
     public void resetGame() {
-        getContentPane().removeAll(); // Clear current UI
+        getContentPane().removeAll(); 
 
         game.setBalance(500);
 
@@ -194,7 +194,7 @@ public class Gui extends JFrame implements Serializable {
         // 4. Reset deck
         game.setDeck(new Deck());
 
-        add(startPanel, BorderLayout.CENTER); // Show start screen
+        add(startPanel, BorderLayout.CENTER); 
 
         revalidate();
         repaint();
@@ -240,7 +240,7 @@ public class Gui extends JFrame implements Serializable {
         p.removeAll();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 
-        /* ---------- row of card images ---------- */
+  
         JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8)); // ← centred
         int i = 0;
         for (Card c : hand.getCards()) {
@@ -249,15 +249,15 @@ public class Gui extends JFrame implements Serializable {
             i++;
         }
         row.setOpaque(false);
-        row.setAlignmentX(Component.CENTER_ALIGNMENT); // ← centre in column
+        row.setAlignmentX(Component.CENTER_ALIGNMENT); 
         p.add(row);
 
-        /* ---------- total shown underneath ---------- */
+
         if (!hideFirst) {
             JLabel totalLbl = new JLabel(String.valueOf(hand.getValue()));
             totalLbl.setFont(customFont);
             totalLbl.setForeground(Color.BLACK);
-            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT); // ← centre in column
+            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT); 
             p.add(totalLbl);
         }
     }

@@ -184,17 +184,17 @@ public class Gui extends JFrame implements Serializable {
     }
 
     public void resetGame() {
-        getContentPane().removeAll(); // Clear current UI
+        getContentPane().removeAll(); 
 
         game.setBalance(500);
 
         game.setPlayerHand(new Hand(0));
         game.setDealerHand(new Hand(0));
 
-        // 4. Reset deck
+
         game.setDeck(new Deck());
 
-        add(startPanel, BorderLayout.CENTER); // Show start screen
+        add(startPanel, BorderLayout.CENTER); 
 
         revalidate();
         repaint();
@@ -240,8 +240,8 @@ public class Gui extends JFrame implements Serializable {
         p.removeAll();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
 
-        /* ---------- row of card images ---------- */
-        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8)); // ← centred
+
+        JPanel row = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 8)); 
         int i = 0;
         for (Card c : hand.getCards()) {
             ImageIcon ico = (i == 0 && hideFirst) ? imgs.get("BACK") : imgs.get(key(c));
@@ -249,15 +249,15 @@ public class Gui extends JFrame implements Serializable {
             i++;
         }
         row.setOpaque(false);
-        row.setAlignmentX(Component.CENTER_ALIGNMENT); // ← centre in column
+        row.setAlignmentX(Component.CENTER_ALIGNMENT); 
         p.add(row);
 
-        /* ---------- total shown underneath ---------- */
+
         if (!hideFirst) {
             JLabel totalLbl = new JLabel(String.valueOf(hand.getValue()));
             totalLbl.setFont(customFont);
             totalLbl.setForeground(Color.BLACK);
-            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT); // ← centre in column
+            totalLbl.setAlignmentX(Component.CENTER_ALIGNMENT); 
             p.add(totalLbl);
         }
     }
